@@ -1,5 +1,5 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-
+-- 
 local createdEntries = {}
 local isLoggedIn = false
 local deathSecondsRemaining = 0
