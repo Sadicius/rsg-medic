@@ -1,7 +1,6 @@
  {
-    "cl_death_log_title" : "is dead",
-    "cl_death_log_message":  "has killed",
-    "cl_death_log_message_b":  "with a",
+    "cl_death_log_title" : "%{playername} (%{playerid}) is dead",
+    "cl_death_log_message":  "%{killername} has killed %{playername} with a **%{weaponlabel}** (%{weaponname})",
 
     "cl_open" : "Open",
     "cl_respawn" : "RESPAWN IN ",
@@ -46,5 +45,11 @@
     "sv_lost_bloodmoney" : "you lost all your bloodmoney!",
     "sv_lost_exp" : "you lost all your XP!",
     "sv_lost_goldcoin" : "you lost all your goldcoin!",
-    "sv_not_medic" : "You are not a Medic!"
+    "sv_not_medic" : "You are not a Medic!",
+
+    "discord_priv" : "Medic | PLAYER DEATH",
+    "discord_public" : "Info | PLAYER DEATH",
+
+    "discord_end" : "Medics for RSG Framework",
+    "discord_end_p" : "Players for RSG Framework"
 }

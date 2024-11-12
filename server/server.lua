@@ -1,5 +1,31 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 lib.locale()
+--------------------
+-- send To Discord
+-------------------
+
+local function sendToDiscord(color, name, message, footer, type)
+    local embed = {
+        {   ['color'] = color,
+            ['title'] = '**'.. name ..'**',
+            ['description'] = message,
+            ['footer'] = {
+                ['text'] = footer
+            }
+        }
+    }
+    if type == 'death' then
+        PerformHttpRequest(Config['Webhooks']['death'], function(err, text, headers) end, 'POST', json.encode({username = name, embeds = embed}), { ['Content-Type'] = 'application/json' })
+    elseif type == 'deathic' then
+        PerformHttpRequest(Config['Webhooks']['death'], function(err, text, headers) end, 'POST', json.encode({username = name, embeds = embed}), { ['Content-Type'] = 'application/json' })
+    end
+end
+
+RegisterNetEvent('rsg-medic:server:sendToDiscord', function(msgDiscordA, msgDiscordB)
+    local src = source
+    sendToDiscord(16753920,	locale('discord_priv'), msgDiscordA ..'\n'.. msgDiscordB, locale('discord_end'), 'death')
+    sendToDiscord(16753920,	locale('discord_public'), msgDiscordB, locale('discord_end_p'), 'deathic')
+end)
 
 -----------------------
 -- use bandage
@@ -93,6 +119,14 @@ RegisterNetEvent('rsg-medic:server:deathactions', function()
     if Config.WipeBloodmoneyOnRespawn then
         Player.Functions.SetMoney('bloodmoney', 0)
         TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_bloodmoney'), type = 'info', duration = 7000 })
+    end
+    if Config.WipeExperienceOnRespawn then
+        Player.Functions.SetMoney('experience', 0)
+        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_exp'), type = 'info', duration = 7000 })
+    end
+    if Config.WipeGoldcoinOnRespawn then
+        Player.Functions.SetMoney('goldcoin', 0)
+        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_goldcoin'), type = 'info', duration = 7000 })
     end
 end)
 

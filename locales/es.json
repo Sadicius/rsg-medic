@@ -1,8 +1,7 @@
 {
-    "cl_death_log_title" : "está muerto",
-    "cl_death_log_message":  "ha matado a",
-    "cl_death_log_message_b":  "con una",
-    
+    "cl_death_log_title" : "%{playername} (%{playerid}) está muerto",
+    "cl_death_log_message": "%{killername} ha matado a %{playername} con una **%{weaponlabel}** (%{weaponname})",
+
     "cl_open" : "Abrir",
     "cl_respawn" : "REAPARECER EN ",
     "cl_seconds" : " SEGUNDOS...",
@@ -46,5 +45,11 @@
     "sv_lost_bloodmoney" : "¡perdiste todo tu dinero de sangre!",
     "sv_lost_exp" : "¡perdiste toda tu experiencia!",
     "sv_lost_goldcoin" : "¡perdiste todas tus monedas de oro!",
-    "sv_not_medic" : "¡No eres médico!"
+    "sv_not_medic" : "¡No eres médico!",
+
+    "discord_priv" : "Médico | MUERTE DEL JUGADOR",
+    "discord_public" : "Información | MUERTE DEL JUGADOR",
+
+    "discord_end" : "Médicos para RSG Framework",
+    "discord_end_p" : "Jugadores para RSG Framework"
 }
