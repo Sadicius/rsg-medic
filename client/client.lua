@@ -280,9 +280,9 @@ end)
 CreateThread(function()
     repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
-        if not LocalPlayer.state.invincible then 
+        if not LocalPlayer.state.invincible then
             local health = GetEntityHealth(cache.ped)
-            if LocalPlayer.state.health ~= health then 
+            if LocalPlayer.state.health ~= health then
                 LocalPlayer.state:set('health', health, true)
             end
         end
@@ -542,6 +542,7 @@ end)
 -- player revive
 ---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:playerRevive', function()
+
     local pos = GetEntityCoords(cache.ped, true)
 
     DoScreenFadeOut(500)
@@ -591,6 +592,7 @@ RegisterNetEvent('rsg-medic:client:adminHeal', function()
     lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
 end
 )
+
 ---------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------
