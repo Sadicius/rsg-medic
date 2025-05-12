@@ -21,6 +21,7 @@
     "cl_error" : "Applying Bandage",
     "cl_error_b" : "you don't have any bandages!",
     "cl_error_c" : "not able to do that right now!",
+    "cl_medical_health": "You have been Healed",
 
     "cl_need_kit" : "You need a First Aid Kit",
     "cl_player_nearby" : "No Player Nearby",

@@ -172,3 +172,53 @@ RegisterServerEvent('rsg-medic:server:removeitem', function(item, amount)
     Player.Functions.RemoveItem(item, amount)
     TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'remove', amount)
 end)
+
+---------------------------------
+-- remove item
+---------------------------------
+if Config.EnableauxilioCommand then
+    local activeAuxilio = {}
+
+    RSGCore.Commands.Add(Config.auxilioCommand, function()
+        local src = source
+        local Player = RSGCore.Functions.GetPlayer(src)
+        if not Player then return end
+
+        lib.callback.await('lib:inputDialog', 1000, function()
+            local input = lib.inputDialog(locale('cl_text_help'), {
+                {
+                    type = 'input',
+                    isRequired = true,
+                    label = locale('cl_text_reason_here'),
+                    icon = 'fas fa-ambulance'
+                }
+            })
+            if not input then return end
+
+            local message = input[1]
+            local time = os.date(Config.DateFormat)
+            local PlayerData = Player.PlayerData
+            local firstname = PlayerData.charinfo.firstname
+            local lastname = PlayerData.charinfo.lastname
+            local playerName = firstname .. ' ' .. lastname
+
+            local players = RSGCore.Functions.GetRSGPlayers()
+
+            for _, targetPlayer in pairs(players) do
+                if targetPlayer.PlayerData.job and targetPlayer.PlayerData.job.name == 'medic' then
+                    local alertMessage = message
+                    TriggerClientEvent('chat:addMessage', targetPlayer.PlayerData.source, {
+                        template = '<div class="msg auxilio"><i class="fas fa-comment"></i> <b><span style="color: #dc3545; font-size: 20px;">[AUXILIO] {0}</span>&nbsp;<span style="font-size: 18px; color: #e1e1e1;">{1}</span></b><div style="margin-top: 2px; font-weight: 300;">',
+                        args = {time, alertMessage}
+                    })
+
+                    table.insert(activeAuxilio, {
+                        sender = src,
+                        recipient = targetPlayer.PlayerData.source,
+                        message = message
+                    })
+                end
+            end
+        end)
+    end)
+end

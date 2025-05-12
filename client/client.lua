@@ -53,12 +53,18 @@ end
 ---------------------------------------------------------------------
 local StartDeathCam = function()
     ClearFocus()
-
     local coords = GetEntityCoords(cache.ped)
     local fov = GetGameplayCamFov()
 
-    deadcam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", coords, 0, 0, 0, fov)
+    local groundZ = coords.z
+    local success, z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z + 10.0, false)
 
+    if success then
+        groundZ = z
+    end
+    local camZ = math.max(coords.z + 1.0, groundZ + 1.0)
+
+    deadcam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", coords.x, coords.y, camZ, 0.0, 0.0, 0.0, fov)
     SetCamActive(deadcam, true)
     RenderScriptCams(true, true, 1000, true, false)
 end
@@ -68,11 +74,8 @@ end
 ---------------------------------------------------------------------
 local EndDeathCam = function()
     ClearFocus()
-
     RenderScriptCams(false, false, 0, true, false)
-    DestroyCam(deadcam, false)
     DestroyAllCams(true)
-
     deadcam = nil
 end
 
@@ -101,38 +104,27 @@ local ProcessNewPosition = function()
     end
 
     local pCoords = GetEntityCoords(cache.ped)
-
-    local behindCam =
-    {
+    local behindCam = {
         x = pCoords.x + ((Cos(angleZ) * Cos(angleY)) + (Cos(angleY) * Cos(angleZ))) / 2 * (0.5 + 0.5),
         y = pCoords.y + ((Sin(angleZ) * Cos(angleY)) + (Cos(angleY) * Sin(angleZ))) / 2 * (0.5 + 0.5),
         z = pCoords.z + ((Sin(angleY))) * (0.5 + 0.5)
     }
 
     local rayHandle = StartShapeTestRay(pCoords.x, pCoords.y, pCoords.z + 0.5, behindCam.x, behindCam.y, behindCam.z, -1, cache.ped, 0)
-
     local _, hitBool, hitCoords, _, _ = GetShapeTestResult(rayHandle)
-
-    local maxRadius = 3.5
+    local maxRadius = 2.5
 
     if (hitBool and Vdist(pCoords.x, pCoords.y, pCoords.z + 0.0, hitCoords) < 0.5 + 0.5) then
         maxRadius = Vdist(pCoords.x, pCoords.y, pCoords.z + 0.0, hitCoords)
     end
 
-    local offset =
-    {
+    local offset = {
         x = ((Cos(angleZ) * Cos(angleY)) + (Cos(angleY) * Cos(angleZ))) / 2 * maxRadius,
         y = ((Sin(angleZ) * Cos(angleY)) + (Cos(angleY) * Sin(angleZ))) / 2 * maxRadius,
         z = ((Sin(angleY))) * maxRadius
     }
 
-    local pos =
-    {
-        x = pCoords.x + offset.x,
-        y = pCoords.y + offset.y,
-        z = pCoords.z + offset.z
-    }
-
+    local pos = { x = pCoords.x + offset.x, y = pCoords.y + offset.y, z = pCoords.z + offset.z }
     return pos
 end
 
@@ -140,20 +132,13 @@ end
 -- process camera controls
 ---------------------------------------------------------------------
 local ProcessCamControls = function()
-
     local playerCoords = GetEntityCoords(cache.ped)
-
-    -- disable 1st person as the 1st person camera can cause some glitches
-    DisableOnFootFirstPersonViewThisUpdate()
-
-    -- calculate new position
-    local newPos = ProcessNewPosition()
-
-    -- set coords of cam
-    SetCamCoord(deadcam, newPos.x, newPos.y, newPos.z)
-
-    -- set rotation
-    PointCamAtCoord(deadcam, playerCoords.x, playerCoords.y, playerCoords.z)
+    DisableOnFootFirstPersonViewThisUpdate()    -- disable 1st person as the 1st person camera can cause some glitches
+    local newPos = ProcessNewPosition()    -- calculate new position
+    if deadcam then
+        SetCamCoord(deadcam, newPos.x, newPos.y, newPos.z)    -- set coords of cam
+        PointCamAtCoord(deadcam, playerCoords.x, playerCoords.y, playerCoords.z)    -- set rotation
+    end
 end
 
 ---------------------------------------------------------------------
@@ -170,7 +155,7 @@ local deathLog = function()
     local killerName = GetPlayerName(killerId) .. " ("..GetPlayerServerId(killerId)..")"
     local weaponLabel = 'Unknown'
     local weaponName = 'Unknown'
-    local weaponItem = sharedWeapons[killerWeapon]
+    local weaponItem = sharedWeapons[killerWeapon] or {}
     if weaponItem then
         weaponLabel = weaponItem.label
         weaponName = weaponItem.name
@@ -179,7 +164,7 @@ local deathLog = function()
     local playerid = GetPlayerServerId(player)
     local playername = GetPlayerName(player)
     local msgDiscordA = playername..' ('..playerid..') '.. locale('cl_death_log_title')
-    local msgDiscordB = killerName..' '.. locale('cl_death_log_message')..' '..playername.. ' '..locale('cl_death_log_message_b')..' **'..weaponLabel..'** ('..weaponName..')'
+    local msgDiscordB = string.format("%s %s %s %s **%s** (%s)", killerName, locale('cl_death_log_message'), playername, locale('cl_death_log_message_b'), weaponLabel, weaponName)
     TriggerServerEvent('rsg-log:server:CreateLog', 'death', msgDiscordA, 'red', msgDiscordB)
 
 end
@@ -244,7 +229,7 @@ CreateThread(function()
 
         if loc.showblip then
             local MedicBlip = BlipAddForCoords(1664425300, loc.coords)
-            SetBlipSprite(MedicBlip, GetHashKey(Config.Blip.blipSprite), true)
+            SetBlipSprite(MedicBlip, joaat(Config.Blip.blipSprite), true)
             SetBlipScale(MedicBlip, Config.Blip.blipScale)
             SetBlipName(MedicBlip, Config.Blip.blipName)
 
@@ -260,17 +245,20 @@ CreateThread(function()
     repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
         local health = GetEntityHealth(cache.ped)
+        local sleep = 1000
         if health == 0 and deathactive == false and not LocalPlayer.state.invincible then
+            sleep = 0
             exports.spawnmanager:setAutoSpawn(false)
             deathTimerStarted = true
             deathTimer()
             deathLog()
             deathactive = true
+            SetEntityHealth(cache.ped, 0)
             TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
             LocalPlayer.state:set('isDead', true, true)
             TriggerEvent('rsg-medic:client:DeathCam')
         end
-        Wait(1000)
+        Wait(sleep)
     end
 end)
 
@@ -280,13 +268,15 @@ end)
 CreateThread(function()
     repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
-        if not LocalPlayer.state.invincible then 
+        local sleep = 1000
+        if not LocalPlayer.state.invincible then
             local health = GetEntityHealth(cache.ped)
-            if LocalPlayer.state.health ~= health then 
+            if LocalPlayer.state.health ~= health then
+                sleep = 0
                 LocalPlayer.state:set('health', health, true)
             end
         end
-        Wait(1000)
+        Wait(sleep)
     end
 end)
 
@@ -299,26 +289,37 @@ CreateThread(function()
 
         if deathactive then
             t = 4
+            -- local coord = GetEntityCoords(cache.ped)
+            -- local coord = 'bottom-center'
 
-            if deathTimerStarted and deathSecondsRemaining > 0 then
-                DrawTxt(locale('cl_respawn') .. deathSecondsRemaining .. locale('cl_seconds'), 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-            end
+            if deathTimerStarted then
+                if deathSecondsRemaining > 0 then
+                    DrawTxt( locale('cl_respawn') .. deathSecondsRemaining .. locale('cl_seconds'), 0.50, 0.80, 0.5, 0.5, true, 139, 0,   0,   200, true )
 
-            if deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0 then
-                DrawTxt(locale('cl_press_respawn'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
-            end
-
-            if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty > 0 and not medicCalled then
-                if deathSecondsRemaining == 0 then
-                    DrawTxt(locale('cl_press_respawn_b'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
-                else
-                    DrawTxt(locale('cl_press_assistance'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    if not medicCalled then
+                        if medicsonduty > 0 then
+                            DrawTxt( locale('cl_press_assistance'), 0.50, 0.85, 0.5, 0.5, true, 255, 215,   0, 200, true )
+                        elseif Config.doctorAi then
+                            DrawTxt( locale('cl_press_assistance'), 0.50, 0.85, 0.5, 0.5, true, 218, 165,  32, 200, true )
+                        end
+                    end
+                elseif deathSecondsRemaining == 0 and not medicCalled then
+                    if medicsonduty == 0 then
+                        if Config.doctorAi then
+                            DrawTxt( locale('cl_press_respawn_b'), 0.50, 0.85, 0.5, 0.5, true, 218, 165,  32, 200, true )
+                        else
+                            DrawTxt( locale('cl_press_respawn'), 0.50, 0.85, 0.5, 0.5, true, 255, 215,   0, 200, true )
+                        end
+                    else
+                        DrawTxt( locale('cl_press_respawn_b'), 0.50, 0.85, 0.5, 0.5, true, 255, 215,   0, 200, true )
+                    end
                 end
             end
 
             if deathTimerStarted and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
                 deathTimerStarted = false
 
+                -- lib.hideTextUI()
                 TriggerEvent('rsg-medic:client:revive')
                 TriggerServerEvent('rsg-medic:server:deathactions')
                 if Config.WipeInventoryOnRespawn then
@@ -332,16 +333,16 @@ CreateThread(function()
 
                 if medicsonduty == 0 then
                     MedicCalled()
-
+                    if Config.doctorAi then
+                        ExecuteCommand('helpdoctor')
+                        lib.notify({ title = locale('cl_medical_called'), type = 'success', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
+                    end
                     goto continue
                 end
 
                 local text = locale('cl_medical_help')
-
                 TriggerServerEvent('rsg-medic:server:medicAlert', text)
-
                 lib.notify({ title = locale('cl_medical_called'), type = 'success', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
-
                 MedicCalled()
 
                 ::continue::
@@ -437,7 +438,7 @@ AddEventHandler('rsg-medic:client:DeathCam', function()
 
     CreateThread(function()
         while true do
-            Wait(4)
+            Wait(200)
 
             if deadcam and Dead then
                 ProcessCamControls()
@@ -505,6 +506,7 @@ end)
 ---------------------------------------------------------------------
 -- Admin Revive
 RegisterNetEvent('rsg-medic:client:adminRevive', function()
+
     local pos = GetEntityCoords(cache.ped, true)
 
     DoScreenFadeOut(500)
@@ -524,6 +526,7 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function()
         TriggerServerEvent('rsg-prison:server:resetoutlawstatus')
     end
 
+    lib.hideTextUI()
     -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
@@ -542,6 +545,7 @@ end)
 -- player revive
 ---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:playerRevive', function()
+
     local pos = GetEntityCoords(cache.ped, true)
 
     DoScreenFadeOut(500)
@@ -560,6 +564,7 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
         TriggerServerEvent('rsg-prison:server:resetoutlawstatus')
     end
 
+    lib.hideTextUI()
     -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
@@ -588,9 +593,9 @@ RegisterNetEvent('rsg-medic:client:adminHeal', function()
     TriggerEvent('hud:client:UpdateNeeds', 100, 100, 100)
     TriggerEvent('hud:client:UpdateStress', 0)
     LocalPlayer.state:set('health', Config.MaxHealth, true)
-    lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
-end
-)
+    lib.notify({title = locale('cl_medical_health'), duration = 5000, type = 'inform'})
+end)
+
 ---------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------
@@ -677,4 +682,17 @@ AddEventHandler("onResourceStop", function(resourceName)
             end
         end
     end
+
+    -- lib.hideTextUI()
+
+    createdEntries = {}
+    deathSecondsRemaining = 0
+    deathTimerStarted = false
+    deathactive = false
+    medicsonduty = 0
+    medicCalled = false
+    Dead = false
+    deadcam = nil
+    LocalPlayer.state:set('inv_busy', false, true)
+    isBusy = false
 end)
