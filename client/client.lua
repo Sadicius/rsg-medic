@@ -260,6 +260,7 @@ local function PlayerDeath()
     deathTimer()
     deathLog()
     deathactive = true
+    TriggerServerEvent('rsg-medic:server:setSaltyChatAlive', false)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
     LocalPlayer.state:set('isDead', true, true)
     TriggerEvent('rsg-medic:client:DeathCam')
@@ -506,6 +507,7 @@ AddEventHandler('rsg-medic:client:revive', function()
         Wait(19000)
 
         TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
+        TriggerServerEvent('rsg-medic:server:setSaltyChatAlive', true)
         LocalPlayer.state:set('isDead', false, true)
     end
 end)
@@ -544,6 +546,7 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function()
     DoScreenFadeIn(1800)
 
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
+    TriggerServerEvent('rsg-medic:server:setSaltyChatAlive', true)
     LocalPlayer.state:set('isDead', false, true)
 end)
 
@@ -580,6 +583,7 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     DoScreenFadeIn(1800)
 
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
+    TriggerServerEvent('rsg-medic:server:setSaltyChatAlive', true)
     LocalPlayer.state:set('isDead', false, true)
 end)
 
