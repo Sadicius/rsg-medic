@@ -20,6 +20,7 @@ Config.MedicCallDelay           = 60 -- delay in seconds before calling medic ag
 Config.BandageTime              = 10000
 Config.BandageHealth            = 15 -- percetnate of max health when player use bandage
 Config.ResetOutlawStatus        = true
+Config.SaltyChat = false
 
 -- Blip Settings
 Config.Blip =
