@@ -1,6 +1,41 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 lib.locale()
 
+---------------------------------
+-- SaltyChat integration
+---------------------------------
+CreateThread(function()
+    if not Config.SaltyChat then return end
+
+    Wait(0)
+
+    if GetResourceState('saltychat') ~= 'started' then
+        print('^1[rsg-medic] Config.SaltyChat is enabled, but saltychat is not started. Start saltychat before rsg-medic.^0')
+    elseif Config.Debug then
+        print('^2[rsg-medic] SaltyChat death voice integration enabled.^0')
+    end
+end)
+
+RegisterNetEvent('rsg-medic:server:setSaltyChatAlive', function(isAlive)
+    if not Config.SaltyChat then return end
+
+    local src = source
+    if type(isAlive) ~= 'boolean' then return end
+
+    if GetResourceState('saltychat') ~= 'started' then
+        if Config.Debug then
+            print('[rsg-medic] SaltyChat integration is enabled, but saltychat is not started')
+        end
+        return
+    end
+
+    exports['saltychat']:SetPlayerAlive(src, isAlive)
+
+    if Config.Debug then
+        print(('[rsg-medic] SaltyChat player %s alive state set to %s'):format(src, isAlive))
+    end
+end)
+
 -----------------------
 -- use bandage
 -----------------------
