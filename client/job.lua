@@ -43,6 +43,14 @@ AddEventHandler('rsg-medic:client:ToggleDuty', function()
         end
 
         TriggerServerEvent("RSGCore:ToggleDuty")
+
+        -- report the resulting duty state to the server for Discord logging
+        CreateThread(function()
+            Wait(500)
+            RSGCore.Functions.GetPlayerData(function(updatedData)
+                TriggerServerEvent('rsg-medic:server:LogDutyToggle', updatedData.job.onduty)
+            end)
+        end)
     end)
 end)
 
@@ -108,7 +116,6 @@ AddEventHandler('rsg-medic:client:TreatWounds', function()
         return
     end
 
-    local ped = PlayerPedId()
     local playerId = GetPlayerServerId(player)
     local tped = GetPlayerPed(GetPlayerFromServerId(playerId))
 
@@ -145,7 +152,8 @@ end)
 
 -- Medic Treat Wounds
 RegisterNetEvent('rsg-medic:client:HealInjuries', function()
-    SetAttributeCoreValue(cache.ped, 0, GetAttributeCoreValue(cache.ped, 0) + Config.MedicTreatHealth)
+    local newValue = lib.math.clamp(GetAttributeCoreValue(cache.ped, 0) + Config.MedicTreatHealth, 0, 100)
+    SetAttributeCoreValue(cache.ped, 0, newValue)
     ClearPedBloodDamage(cache.ped)
 end)
 
@@ -189,6 +197,7 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
             end
 
             if transG <= 0 or distance < 5.0 then
+                local remaining = {}
                 for i = 1, #blipEntries do
                     local blips = blipEntries[i]
                     local bcoords = blips.coords
@@ -202,8 +211,11 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
                         end
 
                         RemoveBlip(blipEntries[i].handle)
+                    else
+                        remaining[#remaining + 1] = blips
                     end
                 end
+                blipEntries = remaining
 
                 transG = Config.DeathTimer
 
@@ -222,11 +234,13 @@ local resource = GetCurrentResourceName()
 AddEventHandler("onResourceStop", function(resourceName)
     if resource ~= resourceName then return end
 
-    ClearGpsMultiRoute(coords)
+    ClearGpsMultiRoute()
 
     for i = 1, #blipEntries do
         if blipEntries[i].handle then
             RemoveBlip(blipEntries[i].handle)
         end
     end
+
+    blipEntries = {}
 end)

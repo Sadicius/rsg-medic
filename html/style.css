@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Rye&family=Cinzel:wght@500;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Cinzel', serif;
+  user-select: none;
+}
+
+#respawn-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 9vh;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+
+#respawn-root.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 35%, rgba(10,6,4,0.55) 78%, rgba(6,3,2,0.9) 100%);
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.4) 0px, transparent 1px, transparent 2px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.15) 0px, transparent 1px, transparent 3px);
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 56px 30px;
+  min-width: 420px;
+  text-align: center;
+  animation: rise-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes rise-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.rule {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
+  margin: 4px 0 10px;
+}
+
+.rule::before,
+.rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(196, 158, 92, 0.75), transparent);
+}
+
+.diamond {
+  width: 8px;
+  height: 8px;
+  margin: 0 12px;
+  background: #c49e5c;
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px rgba(196, 158, 92, 0.7);
+}
+
+.title {
+  font-family: 'Rye', serif;
+  font-size: 34px;
+  letter-spacing: 6px;
+  color: #b0140f;
+  text-shadow:
+    0 0 18px rgba(176, 20, 15, 0.55),
+    0 2px 2px rgba(0, 0, 0, 0.9);
+  margin-bottom: 18px;
+  filter: sepia(0.15);
+}
+
+.countdown-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.countdown-ring {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.ring-track {
+  fill: none;
+  stroke: rgba(196, 158, 92, 0.18);
+  stroke-width: 3;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: #c49e5c;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 326.7;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 5px rgba(196, 158, 92, 0.8));
+  transition: stroke-dashoffset 0.9s linear;
+}
+
+.countdown-number {
+  font-family: 'Rye', serif;
+  font-size: 42px;
+  color: #f1e3c6;
+  text-shadow: 0 0 12px rgba(196, 158, 92, 0.6), 0 2px 3px rgba(0,0,0,0.8);
+}
+
+.countdown-label {
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: #c9b98c;
+  opacity: 0.85;
+}
+
+.prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.prompt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 1;
+  animation: pulse-in 1.6s ease-in-out infinite;
+}
+
+.prompt.hidden {
+  display: none;
+}
+
+@keyframes pulse-in {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #c49e5c;
+  color: #f1e3c6;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 13px;
+  background: rgba(20, 12, 8, 0.55);
+  box-shadow: 0 0 8px rgba(196, 158, 92, 0.35), inset 0 0 6px rgba(0,0,0,0.6);
+}
+
+.prompt-text {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: #e7d8b3;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+}

@@ -1,13 +1,11 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local sharedWeapons = exports['rsg-core']:GetWeapons()
 local createdEntries = {}
-local isLoggedIn = false
 local deathSecondsRemaining = 0
 local deathTimerStarted = false
 local deathactive = false
 local mediclocation = nil
 local medicsonduty = 0
-local healthset = false
 local closestRespawn = nil
 local medicCalled = false
 local Dead = false
@@ -32,21 +30,21 @@ local deathTimer = function()
 end
 
 ---------------------------------------------------------------------
--- drawtext for countdown
+-- NUI respawn/countdown display
 ---------------------------------------------------------------------
-local DrawTxt = function(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
-    local string = CreateVarString(10, "LITERAL_STRING", str)
+local respawnNuiVisible = false
 
-    SetTextFontForCurrentCommand(1) -- Font 1 for appropiate REDM style
-    SetTextScale(w, h)
-    SetTextColor(math.floor(col1), math.floor(col2), math.floor(col3), math.floor(a))
-    SetTextCentre(centre)
-
-    if enableShadow then
-        SetTextDropshadow(1, 0, 0, 0, 255)
+local HideRespawnNui = function()
+    if respawnNuiVisible then
+        respawnNuiVisible = false
+        SendNUIMessage({ action = 'respawn:hide' })
     end
+end
 
-    DisplayText(string, x, y)
+local UpdateRespawnNui = function(payload)
+    respawnNuiVisible = true
+    payload.action = 'respawn:show'
+    SendNUIMessage(payload)
 end
 
 ---------------------------------------------------------------------
@@ -183,6 +181,8 @@ local deathLog = function()
     local msgDiscordB = killerName..' '.. locale('cl_death_log_message')..' '..playername.. ' '..locale('cl_death_log_message_b')..' **'..weaponLabel..'** ('..weaponName..')'
     TriggerServerEvent('rsg-log:server:CreateLog', 'death', msgDiscordA, 'red', msgDiscordB)
 
+    -- rsg-medic's own Discord webhook (independent of the rsg-log call above)
+    TriggerServerEvent('rsg-medic:server:LogDeath', killerName, weaponLabel, weaponName)
 end
 
 ---------------------------------------------------------------------
@@ -310,26 +310,41 @@ end)
 -- display respawn message and countdown
 ---------------------------------------------------------------------
 CreateThread(function()
+    local lastState = nil
+
     while true do
-        local t = 1000
+        local t = 250
 
         if deathactive then
-            t = 4
-
-            if deathTimerStarted and deathSecondsRemaining > 0 then
-                DrawTxt(locale('cl_respawn') .. deathSecondsRemaining .. locale('cl_seconds'), 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-            end
-
-            if deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0 then
-                DrawTxt(locale('cl_press_respawn'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
-            end
+            local showCountdown = deathTimerStarted and deathSecondsRemaining > 0
+            local showRespawnPrompt = deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0
+            local showAssistPrompt = false
+            local respawnAndAssist = false
 
             if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty > 0 and not medicCalled then
                 if deathSecondsRemaining == 0 then
-                    DrawTxt(locale('cl_press_respawn_b'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    respawnAndAssist = true
                 else
-                    DrawTxt(locale('cl_press_assistance'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    showAssistPrompt = true
                 end
+            end
+
+            local state = ('%s|%s|%s|%s|%s|%s'):format(deathSecondsRemaining, showCountdown, showRespawnPrompt, showAssistPrompt, respawnAndAssist, Config.DeathTimer)
+
+            if state ~= lastState then
+                lastState = state
+
+                UpdateRespawnNui({
+                    title = locale('cl_you_are_dead'),
+                    showCountdown = showCountdown,
+                    seconds = deathSecondsRemaining,
+                    total = Config.DeathTimer,
+                    countdownLabel = locale('cl_seconds_remain'),
+                    showRespawnPrompt = showRespawnPrompt or respawnAndAssist,
+                    respawnText = locale('cl_press_respawn'),
+                    showAssistPrompt = showAssistPrompt or respawnAndAssist,
+                    assistText = locale('cl_press_assistance'),
+                })
             end
 
             if deathTimerStarted and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
@@ -362,6 +377,9 @@ CreateThread(function()
 
                 ::continue::
             end
+        else
+            HideRespawnNui()
+            lastState = nil
         end
 
         if Config.Debug then
@@ -601,9 +619,8 @@ RegisterNetEvent('rsg-medic:client:adminHeal', function()
     TriggerEvent('hud:client:UpdateNeeds', 100, 100, 100)
     TriggerEvent('hud:client:UpdateStress', 0)
     LocalPlayer.state:set('health', Config.MaxHealth, true)
-    lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
-end
-)
+    lib.notify({title = locale('cl_healed'), duration = 5000, type = 'success'})
+end)
 ---------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------
