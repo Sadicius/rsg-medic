@@ -2,6 +2,7 @@
     "cl_death_log_title": "ist tot",
     "cl_death_log_message": "wurde getötet von",
     "cl_death_log_message_b": "mit ",
+
     "cl_open": "Öffnen",
     "cl_respawn": "WIEDERBELEBUNG IN ",
     "cl_seconds": " SEKUNDEN...",
@@ -20,6 +21,7 @@
     "cl_error": "Fehler beim Verbinden",
     "cl_error_b": "Du hast keine Verbände dabei!",
     "cl_error_c": "Das kannst du gerade nicht tun!",
+
     "cl_need_kit": "Du benötigst ein Erste-Hilfe-Set",
     "cl_player_nearby": "Kein Spieler in der Nähe",
     "cl_reviving": "Belebe wieder...",
@@ -30,6 +32,7 @@
     "cl_m": " Meter",
     "cl_blip": "Markierungskoordinaten: ",
     "cl_blip_remove": "Markierung entfernt: ",
+    
     "sv_medical_storage": "Sanitätslager",
     "sv_revive": "Belebe einen Spieler oder dich selbst wieder (nur Admin)",
     "sv_revive_2": "Spieler-ID (kann leer bleiben)",
@@ -43,11 +46,5 @@
     "sv_lost_bloodmoney": "Du hast all dein Blutgeld verloren!",
     "sv_lost_exp": "Du hast all deine Erfahrungspunkte verloren!",
     "sv_lost_goldcoin": "Du hast all dein Gold verloren!",
-    "sv_not_medic": "Du bist kein Arzt!",
-    "cl_you_are_dead": "DU BIST GESTORBEN",
-    "cl_seconds_remain": "SEKUNDEN VERBLEIBEND",
-    "cl_healed": "Du wurdest geheilt",
-    "sv_no_permission": "Du hast keine Berechtigung dafür",
-    "sv_not_close_enough": "Der Spieler ist nicht nah genug",
-    "sv_medic_off_duty": "Du musst im Dienst sein, um das zu tun"
+    "sv_not_medic": "Du bist kein Arzt!"
 }

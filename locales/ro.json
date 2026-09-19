@@ -2,6 +2,7 @@
     "cl_death_log_title": "este mort",
     "cl_death_log_message": "a ucis",
     "cl_death_log_message_b": "cu un",
+
     "cl_open": "Deschide",
     "cl_respawn": "REGENERARE IN ",
     "cl_seconds": " SECUNDE..",
@@ -17,9 +18,10 @@
     "cl_medical_supplies": "Provizii medicale",
     "cl_medical_storage": "Depozit medic",
     "cl_progress": "Aplicare pansament",
-    "cl_error": "Eroare",
+    "cl_error": "Aplicare pansament",
     "cl_error_b": "nu ai niciun pansament!",
     "cl_error_c": "nu poti face asta acum!",
+
     "cl_need_kit": "Ai nevoie de un kit de prim ajutor",
     "cl_player_nearby": "Niciun jucator in apropiere",
     "cl_reviving": "Reviving...",
@@ -30,6 +32,7 @@
     "cl_m": " metri",
     "cl_blip": "Coordonate Blip: ",
     "cl_blip_remove": "Blip indepartat: ",
+
     "sv_medical_storage": "Depozit medic",
     "sv_revive": "Revive un jucator sau pe tine insuti (doar admin)",
     "sv_revive_2": "ID Jucator (poate fi gol)",
@@ -43,11 +46,5 @@
     "sv_lost_bloodmoney": "ai pierdut toti banii din sange!",
     "sv_lost_exp": "ai pierdut toata experienta ta!",
     "sv_lost_goldcoin": "ai pierdut toate monedele de aur!",
-    "sv_not_medic": "Nu esti medic!",
-    "cl_you_are_dead": "AI MURIT",
-    "cl_seconds_remain": "SECUNDE RĂMASE",
-    "cl_healed": "Ai fost vindecat",
-    "sv_no_permission": "Nu ai permisiunea sa faci asta",
-    "sv_not_close_enough": "Jucatorul nu este suficient de aproape",
-    "sv_medic_off_duty": "Trebuie sa fii in tura pentru a face asta"
+    "sv_not_medic": "Nu esti medic!"
 }

@@ -3,14 +3,12 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 game 'rdr3'
 
 description 'rsg-medic'
-version '2.2.0'
+version '2.2.1'
 
 shared_scripts {
     '@ox_lib/init.lua',
     'config.lua',
 }
-
-ui_page 'html/index.html'
 
 client_scripts {
     'client/client.lua',
@@ -19,22 +17,23 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/webhook.lua',
-    'server/server.lua',
-    'server/versionchecker.lua',
-}
-
-files {
-    'locales/*.json',
-    'html/index.html',
-    'html/style.css',
-    'html/script.js'
+    'server/*.lua',
 }
 
 dependencies {
     'rsg-core',
     'rsg-bossmenu',
-    'ox_lib'
+    'ox_lib',
+    'ox_target'
+}
+
+ui_page 'web/index.html'
+
+files {
+    'locales/*.json',
+    'web/index.html',
+    'web/style.css',
+    'web/script.js',
 }
 
 lua54 'yes'

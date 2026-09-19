@@ -4,32 +4,141 @@ local transG = Config.DeathTimer
 lib.locale()
 
 ------------------------
---- FUNCTIONS 
+--- OX_TARGET SETUP
 ------------------------
--- Get Closest Player
-local GetClosestPlayer = function()
-    local coords = GetEntityCoords(cache.ped)
-    local closestDistance = -1
-    local closestPlayer = -1
-    local closestPlayers = RSGCore.Functions.GetPlayersFromCoords()
 
-    for i = 1, #closestPlayers, 1 do
-        if closestPlayers[i] ~= PlayerId() then
-            local ped = GetPlayerPed(closestPlayers[i])
-            local pos = GetEntityCoords(ped)
-            local distance = #(pos - coords)
+CreateThread(function()
+    Wait(5000)
 
-            if closestDistance == -1 or closestDistance > distance then
-                closestPlayer = closestPlayers[i]
-                closestDistance = distance
-            end
-        end
-    end
+    local ok = pcall(function()
+        return exports.ox_target.addGlobalPlayer
+    end)
+    if not ok then return end
 
-    return closestPlayer, closestDistance
-end
+    exports.ox_target:addGlobalPlayer({
+        {
+            name = 'medic_revive',
+            label = locale('cl_reviving'),
+            icon = 'fa-solid fa-kit-medical',
+            canInteract = function()
+                local PlayerData = RSGCore.Functions.GetPlayerData()
+                return PlayerData.job and PlayerData.job.name == Config.JobRequired and PlayerData.job.onduty
+            end,
+            onSelect = function(data)
+                local entity = data.entity
+                if not IsPedAPlayer(entity) then return end
 
-------------------------
+                local hasItem = RSGCore.Functions.HasItem('firstaid', 1)
+                if not hasItem then
+                    lib.notify({ title = locale('cl_need_kit'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
+                    return
+                end
+
+                local playerIndex = NetworkGetPlayerIndexFromPed(entity)
+                local serverId = GetPlayerServerId(playerIndex)
+
+                ExecuteCommand('me Reviving')
+
+                lib.progressBar({
+                    duration = Config.MedicReviveTime,
+                    position = 'bottom',
+                    useWhileDead = false,
+                    canCancel = false,
+                    disableControl = true,
+                    disable = { move = true, mouse = false },
+                    label = locale('cl_reviving'),
+                    anim = {
+                        dict = 'mini_games@story@mob4@heal_jules@bandage@arthur',
+                        clip = 'bandage_fast',
+                        flag = 1,
+                    },
+                })
+
+                TriggerServerEvent('rsg-medic:server:RevivePlayer', serverId)
+                transG = 0
+            end,
+        },
+        {
+            name = 'medic_treat',
+            label = locale('cl_treating'),
+            icon = 'fa-solid fa-bandage',
+            canInteract = function()
+                local PlayerData = RSGCore.Functions.GetPlayerData()
+                return PlayerData.job and PlayerData.job.name == Config.JobRequired and PlayerData.job.onduty
+            end,
+            onSelect = function(data)
+                local entity = data.entity
+                if not IsPedAPlayer(entity) then return end
+
+                local hasItem = RSGCore.Functions.HasItem('bandage', 1)
+                if not hasItem then
+                    lib.notify({ title = locale('cl_need_bandage'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
+                    return
+                end
+
+                local playerIndex = NetworkGetPlayerIndexFromPed(entity)
+                local serverId = GetPlayerServerId(playerIndex)
+
+                ExecuteCommand('me Treating Wounds')
+
+                lib.progressBar({
+                    duration = Config.MedicTreatTime,
+                    position = 'bottom',
+                    useWhileDead = false,
+                    canCancel = false,
+                    disableControl = true,
+                    disable = { move = true, mouse = false },
+                    label = locale('cl_treating'),
+                    anim = {
+                        dict = 'mini_games@story@mob4@heal_jules@bandage@arthur',
+                        clip = 'bandage_fast',
+                        flag = 1,
+                    },
+                })
+
+                TriggerServerEvent('rsg-medic:server:TreatWounds', serverId)
+                transG = 0
+            end,
+        },
+        {
+            name = 'medic_check',
+            label = 'Check Injuries',
+            icon = 'fa-solid fa-x-ray',
+            canInteract = function()
+                local PlayerData = RSGCore.Functions.GetPlayerData()
+                return PlayerData.job and PlayerData.job.name == Config.JobRequired and PlayerData.job.onduty
+            end,
+            onSelect = function(data)
+                local entity = data.entity
+                if not IsPedAPlayer(entity) then return end
+
+                local playerIndex = NetworkGetPlayerIndexFromPed(entity)
+                local serverId = GetPlayerServerId(playerIndex)
+
+                ExecuteCommand('me Examining Patient')
+
+                RSGCore.Functions.TriggerCallback('rsg-medic:server:getPlayerInjuries', function(injuries, patientName)
+                    if not injuries then
+                        lib.notify({ title = 'Error', description = 'Could not get injury data', type = 'error' })
+                        return
+                    end
+                    SetNuiFocus(true, true)
+                    SetNuiFocusKeepInput(false)
+                    SendNUIMessage({
+                        type = 'showInjuries',
+                        injuries = injuries,
+                        patientName = patientName or 'Patient',
+                    })
+                    TriggerServerEvent('rsg-medic:server:watchSkeleton', serverId)
+                end, serverId)
+                transG = 0
+            end,
+        },
+    }, 2.5)
+end)
+
+
+-----------------------
 --- EVENTS
 ------------------------
 -- Toggle On-Duty
@@ -43,18 +152,10 @@ AddEventHandler('rsg-medic:client:ToggleDuty', function()
         end
 
         TriggerServerEvent("RSGCore:ToggleDuty")
-
-        -- report the resulting duty state to the server for Discord logging
-        CreateThread(function()
-            Wait(500)
-            RSGCore.Functions.GetPlayerData(function(updatedData)
-                TriggerServerEvent('rsg-medic:server:LogDutyToggle', updatedData.job.onduty)
-            end)
-        end)
     end)
 end)
 
--- Medic Revive Player
+-- Medic Revive Player (kept as a fallback event – now also driven by ox_target above)
 AddEventHandler('rsg-medic:client:RevivePlayer', function()
     local hasItem = RSGCore.Functions.HasItem('firstaid', 1)
     if not hasItem then
@@ -62,24 +163,28 @@ AddEventHandler('rsg-medic:client:RevivePlayer', function()
         return
     end
 
-    local player, distance = GetClosestPlayer()
-    if player == -1 or distance >= 5.0 then
+    local players = RSGCore.Functions.GetPlayersFromCoords(nil, 5.0)
+    local playerId = -1
+    for i = 1, #players do
+        if players[i] ~= PlayerId() then
+            playerId = players[i]
+            break
+        end
+    end
+
+    if playerId == -1 then
         lib.notify({ title = locale('cl_player_nearby'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
         return
     end
 
-    local playerId = GetPlayerServerId(player)
-    local tped = GetPlayerPed(GetPlayerFromServerId(playerId))
+    local serverId = GetPlayerServerId(playerId)
+    local tped = GetPlayerPed(GetPlayerFromServerId(serverId))
 
     TaskTurnPedToFaceEntity(cache.ped, tped, -1)
-
     Wait(3000)
-
     FreezeEntityPosition(cache.ped, true)
     TaskStartScenarioInPlace(cache.ped, `WORLD_HUMAN_CROUCH_INSPECT`, -1, true, false, false, false)
-
     Wait(5000)
-
     ExecuteCommand('me Reviving')
 
     lib.progressBar({
@@ -88,21 +193,17 @@ AddEventHandler('rsg-medic:client:RevivePlayer', function()
         useWhileDead = false,
         canCancel = false,
         disableControl = true,
-        disable = {
-            move = true,
-            mouse = false,
-        },
+        disable = { move = true, mouse = false },
         label = locale('cl_reviving'),
     })
 
     ClearPedTasks(cache.ped)
     FreezeEntityPosition(cache.ped, false)
-    TriggerServerEvent('rsg-medic:server:RevivePlayer', playerId)
+    TriggerServerEvent('rsg-medic:server:RevivePlayer', serverId)
     transG = 0
-
 end)
 
--- Medic Treat Wounds
+-- Medic Treat Wounds (kept as a fallback event – now also driven by ox_target above)
 AddEventHandler('rsg-medic:client:TreatWounds', function()
     local hasItem = RSGCore.Functions.HasItem('bandage', 1)
     if not hasItem then
@@ -110,24 +211,28 @@ AddEventHandler('rsg-medic:client:TreatWounds', function()
         return
     end
 
-    local player, distance = GetClosestPlayer()
-    if player == -1 or distance >= 5.0 then
+    local players = RSGCore.Functions.GetPlayersFromCoords(nil, 5.0)
+    local playerId = -1
+    for i = 1, #players do
+        if players[i] ~= PlayerId() then
+            playerId = players[i]
+            break
+        end
+    end
+
+    if playerId == -1 then
         lib.notify({ title = locale('cl_player_nearby'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
         return
     end
 
-    local playerId = GetPlayerServerId(player)
-    local tped = GetPlayerPed(GetPlayerFromServerId(playerId))
+    local serverId = GetPlayerServerId(playerId)
+    local tped = GetPlayerPed(GetPlayerFromServerId(serverId))
 
     TaskTurnPedToFaceEntity(cache.ped, tped, -1)
-
     Wait(3000)
-
     FreezeEntityPosition(cache.ped, true)
     TaskStartScenarioInPlace(cache.ped, `WORLD_HUMAN_CROUCH_INSPECT`, -1, true, false, false, false)
-
     Wait(5000)
-
     ExecuteCommand('me Treating Wounds')
 
     lib.progressBar({
@@ -136,24 +241,19 @@ AddEventHandler('rsg-medic:client:TreatWounds', function()
         useWhileDead = false,
         canCancel = false,
         disableControl = true,
-        disable = {
-            move = true,
-            mouse = false,
-        },
+        disable = { move = true, mouse = false },
         label = locale('cl_treating'),
     })
 
     ClearPedTasks(cache.ped)
     FreezeEntityPosition(cache.ped, false)
-    TriggerServerEvent('rsg-medic:server:TreatWounds', playerId)
+    TriggerServerEvent('rsg-medic:server:TreatWounds', serverId)
     transG = 0
-
 end)
 
--- Medic Treat Wounds
+-- Medic Treat Wounds (heal injuries on the patient's client)
 RegisterNetEvent('rsg-medic:client:HealInjuries', function()
-    local newValue = lib.math.clamp(GetAttributeCoreValue(cache.ped, 0) + Config.MedicTreatHealth, 0, 100)
-    SetAttributeCoreValue(cache.ped, 0, newValue)
+    SetAttributeCoreValue(cache.ped, 0, GetAttributeCoreValue(cache.ped, 0) + Config.MedicTreatHealth)
     ClearPedBloodDamage(cache.ped)
 end)
 
@@ -176,8 +276,6 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
     blipEntries[#blipEntries + 1] = {coords = coords, handle = blip}
     blipEntries[#blipEntries + 1] = {coords = coords, handle = blip2}
 
-    -- Add GPS Route
-
     if Config.AddGPSRoute then
         StartGpsMultiRoute(`COLOR_GREEN`, true, true)
         AddPointToGpsMultiRoute(coords)
@@ -197,7 +295,6 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
             end
 
             if transG <= 0 or distance < 5.0 then
-                local remaining = {}
                 for i = 1, #blipEntries do
                     local blips = blipEntries[i]
                     local bcoords = blips.coords
@@ -211,11 +308,8 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
                         end
 
                         RemoveBlip(blipEntries[i].handle)
-                    else
-                        remaining[#remaining + 1] = blips
                     end
                 end
-                blipEntries = remaining
 
                 transG = Config.DeathTimer
 
@@ -234,13 +328,11 @@ local resource = GetCurrentResourceName()
 AddEventHandler("onResourceStop", function(resourceName)
     if resource ~= resourceName then return end
 
-    ClearGpsMultiRoute()
+    ClearGpsMultiRoute(coords)
 
     for i = 1, #blipEntries do
         if blipEntries[i].handle then
             RemoveBlip(blipEntries[i].handle)
         end
     end
-
-    blipEntries = {}
 end)
